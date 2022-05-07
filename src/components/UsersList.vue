@@ -20,6 +20,6 @@ export default {
 
 <style scoped lang="scss">
     .user:not(:first-child) {
-        margin-top: 2px;
+        margin-top: 6px;
     }
 </style>

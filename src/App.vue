@@ -8,14 +8,13 @@ import UsersList from './components/UsersList.vue'
 import SearchBox from './components/SearchBox.vue'
 
 import gql from 'graphql-tag'
-import {apolloClient} from './apolloClient'
+import { apolloClient } from './apolloClient'
 
-const LIMIT = 10;
+const LIMIT = 5;
 const START_PAGE = 0;
-
-const query = gql`
+const QUERY = gql`
   query Users($q: String, $page: Int, $limit: Int) {
-    users(options: { search: { q: $q }, paginate: { page: $page, limit: $limit } }) {
+    users(options: { search: { q: $q }, slice: { start: $page, limit: $limit } }) {
       data {
         id
         name
@@ -36,22 +35,42 @@ const query = gql`
 export default {
   name: 'App',
   users: [],
+  textToSearch: '',
   methods: {
     async search(textToSearch) {
-      // if (textToSearch) {
-        const result = await apolloClient.query({query: query, variables: { q: textToSearch, page: START_PAGE, limit: LIMIT }});
-        console.log(result);
+      this.page = 0;
+      this.textToSearch = textToSearch;
+      if (textToSearch) {
+        const result = await fetchUsers(textToSearch, START_PAGE,LIMIT);
         this.users = result?.data.users.data;
-      // } else {
-      //   this.users = [];
-      // }
+      } else {
+        this.users = [];
+      }
       this.$forceUpdate();
+    },
+    async fetchNextUser() {
+      const roundedDocumentHeight = Math.ceil(document.documentElement.offsetHeight);
+      const roundedScrollPosition = Math.ceil(document.documentElement.scrollTop + window.innerHeight);
+      const bottomOfWindow = roundedScrollPosition === roundedDocumentHeight;
+      if (bottomOfWindow) {
+        const page = this.users.length;
+        const result = await fetchUsers(this.textToSearch, page, 1);
+        this.users = [...this.users, ...result?.data.users.data];
+        this.$forceUpdate();
+      }
     }
+  },
+  mounted() {
+    window.onscroll = () => this.fetchNextUser();
   },
   components: {
     SearchBox,
     UsersList
   }
+}
+
+function fetchUsers(textToSearch, page, limit) {
+  return apolloClient.query({query: QUERY, variables: { q: textToSearch, page, limit }});
 }
 </script>
 
