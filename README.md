@@ -1,4 +1,4 @@
-# alkimii-code-test
+# Users Search Tool with VueJS and GraphQL
 
 ## Project setup
 ```
