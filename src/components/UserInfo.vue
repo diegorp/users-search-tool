@@ -2,8 +2,8 @@
     <div class="user">
         <div class="user__info">
             <p class="user__info__name">{{ user.name }}</p>
-            <p class="user__info__email">{{ user.email }}</p>
-            <p class="user__info__phone">{{ user.phone }}</p>
+            <p class="user__info__email"><img src="../assets/email.png">{{ user.email }}</p>
+            <p class="user__info__phone"><img src="../assets/phone.png">{{ user.phone }}</p>
         </div>
         <div class="user__company">
             <p class="user__company__name">{{ user.company.name }}</p>
@@ -35,6 +35,12 @@ export default {
             &__email,
             &__phone {
                 font-size: 0.75em;
+                display: flex;
+
+                img {
+                    height: 16px;
+                    margin-right: 3px;
+                }
             }
         }
 

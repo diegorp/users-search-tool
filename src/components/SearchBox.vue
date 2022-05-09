@@ -5,7 +5,11 @@
 <script>
 export default {
     name: 'SearchBox',
-    textToSearch: '',
+    data() {
+        return {
+            textToSearch: '',
+        }
+    },
     methods: {
         search() {
             this.$emit('search', this.textToSearch);

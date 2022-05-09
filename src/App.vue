@@ -1,64 +1,65 @@
 <template>
   <SearchBox @search="search"/>
   <UsersList :users="users"/>
+  <div v-if="isLoading" class="loading"><img src="./assets/loading.gif"></div>
 </template>
 
 <script>
-import UsersList from './components/UsersList.vue'
-import SearchBox from './components/SearchBox.vue'
+import UsersList from './components/UsersList.vue';
+import SearchBox from './components/SearchBox.vue';
 
-import gql from 'graphql-tag'
-import { apolloClient } from './apolloClient'
-
-const LIMIT = 5;
-const START_PAGE = 0;
-const QUERY = gql`
-  query Users($q: String, $page: Int, $limit: Int) {
-    users(options: { search: { q: $q }, slice: { start: $page, limit: $limit } }) {
-      data {
-        id
-        name
-        email
-        phone
-        company {
-          name
-          catchPhrase
-        }
-      },
-      meta {
-        totalCount
-      }
-    }
-  }
-`;
+import { apolloClient } from './apolloConfig/apolloClient';
+import { USERS_QUERY } from './apolloConfig/usersQuery';
 
 export default {
   name: 'App',
-  users: [],
-  textToSearch: '',
+  data() {
+    return {
+      apollo: {
+        client: apolloClient,
+        usersQuery: USERS_QUERY,
+        limit: 5, // Setting it to 5 instead of 10 because there are only 10 elements on the API
+        startPage: 0,
+      },
+      users: [],
+      textToSearch: '',
+      isLoading: false,
+    }
+  },
   methods: {
     async search(textToSearch) {
-      this.page = 0;
       this.textToSearch = textToSearch;
       if (textToSearch) {
-        const result = await fetchUsers(textToSearch, START_PAGE,LIMIT);
+        this.isLoading = true;
+        const result = await this.fetchUsers(textToSearch, this.apollo.startPage, this.apollo.limit);
+        this.isLoading = false;
         this.users = result?.data.users.data;
       } else {
         this.users = [];
       }
-      this.$forceUpdate();
     },
     async fetchNextUser() {
       const roundedDocumentHeight = Math.ceil(document.documentElement.offsetHeight);
       const roundedScrollPosition = Math.ceil(document.documentElement.scrollTop + window.innerHeight);
       const bottomOfWindow = roundedScrollPosition === roundedDocumentHeight;
       if (bottomOfWindow) {
+        this.isLoading = true;
         const page = this.users.length;
-        const result = await fetchUsers(this.textToSearch, page, 1);
+        const result = await this.fetchUsers(this.textToSearch, page, 1);
+        this.isLoading = false;
         this.users = [...this.users, ...result?.data.users.data];
-        this.$forceUpdate();
       }
-    }
+    },
+    fetchUsers(textToSearch, page, limit) {
+      return this.apollo.client.query({
+        query: this.apollo.usersQuery,
+        variables: {
+          q: textToSearch,
+          page,
+          limit
+        }
+      });
+    },
   },
   mounted() {
     window.onscroll = () => this.fetchNextUser();
@@ -67,10 +68,6 @@ export default {
     SearchBox,
     UsersList
   }
-}
-
-function fetchUsers(textToSearch, page, limit) {
-  return apolloClient.query({query: QUERY, variables: { q: textToSearch, page, limit }});
 }
 </script>
 
@@ -83,5 +80,13 @@ function fetchUsers(textToSearch, page, limit) {
   color: #2c3e50;
   display: flex;
   flex-direction: column;
+
+  .loading {
+    text-align: center;
+
+    img {
+      width: 64px;
+    }
+  }
 }
 </style>
